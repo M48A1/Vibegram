@@ -1,0 +1,125 @@
+diff --git a/Telegram-Mac/en.lproj/Localizable.strings b/Telegram-Mac/en.lproj/Localizable.strings
+index 4a52fc6125e22bee841f3d03e7dfeb2b503d97c6..6b6eb6c69705024dbefb795ab7bcf7d5f09ef6a1 100644
+GIT binary patch
+delta 190
+zcmcc8k^H7JxuJ!zg{g(Pg{6hHg{_6Xg`<VDg{y_Tg{OtLg|CIbMW98nMW{u%MWjWv
+zMXW`9i$utgdM*YfhA@Uqh9rhmhIED^hD3&320aExhB6?l1c-|mTo{~zY7`i3fmjL5
+nQ(({l${<u|0>!Nvu$vUhkjIb>#Q6;6KoZp~pxkt8V{u6Uq*y2<
+
+delta 57
+zcmV~$SrtS8006+}z8AZ$U>YdmV?I_N5kwF}2s6*I-T!SD2t{IvR3=v_RceioR;Ty%
+LGZ;<gb6Kw!L}U`|
+
+diff --git a/packages/Localization/Sources/Localization/Localizable.swift b/packages/Localization/Sources/Localization/Localizable.swift
+index c1f8e541..a24fd69a 100644
+--- a/packages/Localization/Sources/Localization/Localizable.swift
++++ b/packages/Localization/Sources/Localization/Localizable.swift
+@@ -19637,6 +19637,10 @@ public final class L10n {
+   public static var verifyAgeAlertPassedHeader: String  { return L10n.tr("Localizable", "VerifyAge.Alert.Passed.Header") }
+   /// You can now view sensitive content.
+   public static var verifyAgeAlertPassedInfo: String  { return L10n.tr("Localizable", "VerifyAge.Alert.Passed.Info") }
++  /// DC (avatar)
++  public static var vibegramAvatarDC: String  { return L10n.tr("Localizable", "Vibegram.AvatarDC") }
++  /// Unavailable
++  public static var vibegramUnknownDC: String  { return L10n.tr("Localizable", "Vibegram.UnknownDC") }
+   /// Auto
+   public static var videoQualityAuto: String  { return L10n.tr("Localizable", "Video.Quality.Auto") }
+   /// Cancel
+diff --git a/packages/PeerInfoUI/Sources/PeerInfoUI/UserInfoEntries.swift b/packages/PeerInfoUI/Sources/PeerInfoUI/UserInfoEntries.swift
+index 651a62a2..bcd39f7e 100644
+--- a/packages/PeerInfoUI/Sources/PeerInfoUI/UserInfoEntries.swift
++++ b/packages/PeerInfoUI/Sources/PeerInfoUI/UserInfoEntries.swift
+@@ -1315,6 +1315,7 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+     case phoneNumber(sectionId:Int, index: Int, value: PhoneNumberWithLabel, canCopy: Bool, viewType: GeneralViewType)
+     case notes(sectionId:Int, index: Int, value: CachedUserData.Note, viewType: GeneralViewType)
+     case peerId(sectionId:Int, value: String, viewType: GeneralViewType)
++    case avatarDatacenter(sectionId:Int, value: String?, viewType: GeneralViewType)
+     case userName(sectionId:Int, value: [UserInfoAddress], viewType: GeneralViewType)
+     case verifiedInfo(sectionId: Int, value: PeerVerification, viewType: GeneralViewType)
+     case businessLocation(sectionId:Int, peer: EnginePeer, businessLocation: TelegramBusinessLocation, viewType: GeneralViewType)
+@@ -1409,7 +1410,7 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+             return viewType
+         case .notes(_, _, _, let viewType):
+             return viewType
+-        case .peerId(_, _, let viewType):
++        case .peerId(_, _, let viewType), .avatarDatacenter(_, _, let viewType):
+             return viewType
+         case .userName(_, _, let viewType):
+             return viewType
+@@ -1517,6 +1518,7 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+         case let .userName(sectionId, value, _): return .userName(sectionId: sectionId, value: value, viewType: viewType)
+         case let .verifiedInfo(sectionId, value, _): return .verifiedInfo(sectionId: sectionId, value: value, viewType: viewType)
+         case let .peerId(sectionId, value, _): return .peerId(sectionId: sectionId, value: value, viewType: viewType)
++        case let .avatarDatacenter(sectionId, value, _): return .avatarDatacenter(sectionId: sectionId, value: value, viewType: viewType)
+         case let .businessLocation(sectionId, peer, location, _): return .businessLocation(sectionId: sectionId, peer: peer, businessLocation: location, viewType: viewType)
+         case let .businessHours(sectionId, peer, businessHours, revealed, displayMyZone, _): return .businessHours(sectionId: sectionId, peer: peer, businessHours: businessHours, revealed: revealed, displayMyZone: displayMyZone, viewType: viewType)
+         case let .reportReaction(sectionId, value, _): return .reportReaction(sectionId: sectionId, value: value, viewType: viewType)
+@@ -1820,6 +1822,13 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+             default:
+                 return false
+             }
++        case let .avatarDatacenter(sectionId, value, viewType):
++            switch entry {
++            case .avatarDatacenter(sectionId, value, viewType):
++                return true
++            default:
++                return false
++            }
+         case let .peerId(sectionId, value, viewType):
+             switch entry {
+             case .peerId(sectionId, value, viewType):
+@@ -2126,6 +2135,8 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+             return 125
+         case .peerId:
+             return 126
++        case .avatarDatacenter:
++            return 165
+         case .notes:
+             return 127
+         case .businessHours:
+@@ -2257,7 +2268,7 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+             return (sectionId * 1000) + stableIndex
+         case let .verifiedInfo(sectionId, _, _):
+             return (sectionId * 1000) + stableIndex
+-        case let .peerId(sectionId, _, _):
++        case let .peerId(sectionId, _, _), let .avatarDatacenter(sectionId, _, _):
+             return (sectionId * 1000) + stableIndex
+         case let .businessHours(sectionId, _, _, _, _, _):
+             return (sectionId * 1000) + stableIndex
+@@ -2559,9 +2570,15 @@ enum UserInfoEntry<Context: AccountContextProtocol>: PeerInfoEntry {
+                 arguments.openQrStudio(from: control)
+             })
+         case let .peerId(_, value, viewType):
+-            return  TextAndLabelItem(initialSize, stableId: stableId.hashValue, label: "PEER ID", copyMenuText: strings().textCopyText, text: value, context: arguments.context, viewType: viewType, canCopy: true, _copyToClipboard: {
++            return  TextAndLabelItem(initialSize, stableId: stableId.hashValue, label: "UID", copyMenuText: strings().textCopyText, text: value, context: arguments.context, viewType: viewType, canCopy: true, _copyToClipboard: {
+                 arguments.copy(value)
+             })
++        case let .avatarDatacenter(_, value, viewType):
++            return TextAndLabelItem(initialSize, stableId: stableId.hashValue, label: strings().vibegramAvatarDC, copyMenuText: strings().textCopyText, text: value ?? strings().vibegramUnknownDC, context: arguments.context, viewType: viewType, isTextSelectable: value != nil, canCopy: value != nil, _copyToClipboard: {
++                if let value = value {
++                    arguments.copy(value)
++                }
++            })
+         case let .businessLocation(_, peer, location, viewType):
+             return PeerInfoLocationRowItem(initialSize, stableId: stableId.hashValue, context: arguments.context, peer: peer._asPeer(), location: location, viewType: viewType, open: {
+                 arguments.openLocation(peer._asPeer(), location)
+@@ -3103,10 +3120,17 @@ func userInfoEntries<Context: AccountContextProtocol>(view: PeerView, arguments:
+                 
+             }
+             
+-            if FastSettings.canViewPeerId, state.editingState == nil {
++            if state.editingState == nil {
+                 entries.append(UserInfoEntry<Context>.section(sectionId: sectionId))
+                 sectionId += 1
+-                entries.append(UserInfoEntry<Context>.peerId(sectionId: sectionId, value: "\(user.id.id._internalGetInt64Value())", viewType: .singleItem))
++                let avatarDatacenterId = user.photo.compactMap { representation -> Int? in
++                    guard let resource = representation.resource as? CloudPeerPhotoSizeMediaResource, resource.datacenterId > 0 else {
++                        return nil
++                    }
++                    return resource.datacenterId
++                }.first
++                entries.append(UserInfoEntry<Context>.peerId(sectionId: sectionId, value: String(user.id.id._internalGetInt64Value()), viewType: .firstItem))
++                entries.append(UserInfoEntry<Context>.avatarDatacenter(sectionId: sectionId, value: avatarDatacenterId.map { String($0) }, viewType: .lastItem))
+             }
+             
+             if mediaTabsData.loaded && !mediaTabsData.collections.isEmpty, let controller = arguments.mediaController() {

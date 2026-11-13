@@ -1,0 +1,13 @@
+{
+  "macOS": {
+    "url": "https://github.com/TelegramMessenger/telegram-macos.git",
+    "revision": "246e3e957ae5cea1ecff6d7a6a6db3e47be69bb5",
+    "patch": "patches/official/macos-uid-dc.patch",
+    "build_patch": "patches/official/macos-xcode27-support.patch"
+  },
+  "iOS": {
+    "url": "https://github.com/TelegramMessenger/Telegram-iOS.git",
+    "revision": "24638bc69bd083981b178dd1e7f921eebbf7fc46",
+    "patch": "patches/official/ios-uid-dc.patch"
+  }
+}

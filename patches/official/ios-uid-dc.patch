@@ -1,0 +1,89 @@
+diff --git a/Telegram/Telegram-iOS/en.lproj/Localizable.strings b/Telegram/Telegram-iOS/en.lproj/Localizable.strings
+index 0c6e4e28f1..8cbfbef1a9 100644
+--- a/Telegram/Telegram-iOS/en.lproj/Localizable.strings
++++ b/Telegram/Telegram-iOS/en.lproj/Localizable.strings
+@@ -17342,3 +17342,6 @@ Error: %8$@";
+ "VoiceOver.Reactions.ShowAll" = "Show All Reactions";
+ "VoiceOver.Reactions.Premium" = "Premium Reactions";
+ "VoiceOver.Passcode.Incorrect" = "Incorrect passcode. Please try again.";
++
++"Vibegram.AvatarDC" = "DC (avatar)";
++"Vibegram.UnknownDC" = "Unavailable";
+diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
+index 08e627e3f9..fd4abfe003 100644
+--- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
++++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
+@@ -107,6 +107,8 @@ func infoItems(
+         let ItemAbout = 3003
+         let ItemNote = 3004
+         let ItemAppFooter = 3005
++        let ItemUID = 3006
++        let ItemAvatarDC = 3007
+         let ItemAffiliate = 4000
+         let ItemAffiliateInfo = 4001
+         let ItemBusinessHours = 5000
+@@ -177,6 +179,39 @@ func infoItems(
+             ))
+         }
+         
++        let uid = String(user.id.id._internalGetInt64Value())
++        let avatarDatacenterId = user.photo.compactMap { representation -> Int? in
++            guard let resource = representation.resource as? CloudPeerPhotoSizeMediaResource, resource.datacenterId > 0 else {
++                return nil
++            }
++            return resource.datacenterId
++        }.first
++        for (id, label, value) in [
++            (ItemUID, "UID", Optional(uid)),
++            (ItemAvatarDC, presentationData.strings.Vibegram_AvatarDC, avatarDatacenterId.map { String($0) })
++        ] {
++            let openIdentityMenu: ((ASDisplayNode, Promise<Bool>?) -> Void)? = value.map { text in
++                return { node, _ in
++                    interaction.openPeerInfoContextMenu(.identity(text), node, nil)
++                }
++            }
++            let identityContextAction: ((ASDisplayNode, ContextGesture?, CGPoint?) -> Void)? = value.map { text in
++                return { node, _, _ in
++                    interaction.openPeerInfoContextMenu(.identity(text), node, nil)
++                }
++            }
++            items[currentPeerInfoSection]!.append(PeerInfoScreenLabeledValueItem(
++                id: id,
++                label: label,
++                text: value ?? presentationData.strings.Vibegram_UnknownDC,
++                action: openIdentityMenu,
++                contextAction: identityContextAction,
++                requestLayout: { animated in
++                    interaction.requestLayout(animated)
++                }
++            ))
++        }
++
+         if let phone = user.phone {
+             let formattedPhone = formatPhoneNumber(context: context, number: phone)
+             let label: String
+diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreen.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreen.swift
+index 463ab663de..f04bb76d21 100644
+--- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreen.swift
++++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreen.swift
+@@ -153,6 +153,7 @@ enum PeerInfoMemberAction {
+ }
+ 
+ enum PeerInfoContextSubject {
++    case identity(String)
+     case bio
+     case phone(String)
+     case link(customLink: String?)
+diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenOpenPeerInfoContextMenu.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenOpenPeerInfoContextMenu.swift
+index 0bddb60703..73ec7caabc 100644
+--- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenOpenPeerInfoContextMenu.swift
++++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoScreenOpenPeerInfoContextMenu.swift
+@@ -160,7 +160,7 @@ extension PeerInfoScreenNode {
+                     return nil
+                 }
+             }))
+-        case .businessHours(let text), .businessLocation(let text):
++        case .identity(let text), .businessHours(let text), .businessLocation(let text):
+             let presentationData = context.sharedContext.currentPresentationData.with { $0 }
+                 
+             let actions: [ContextMenuAction] = [ContextMenuAction(content: .text(title: presentationData.strings.Conversation_ContextMenuCopy, accessibilityLabel: presentationData.strings.Conversation_ContextMenuCopy), action: { [weak self] in
